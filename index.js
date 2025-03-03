@@ -1,36 +1,43 @@
 const express = require("express");
-const app = express();
 const cors = require("cors");
-const port = 3500;
+
+const app = express();
+const PORT = process.env.PORT || 3500;
+
+const VERIFY_TOKEN = "token1122"; // Replace with your actual verification token
 
 // Middleware
-app.use(cors()); // Enable CORS for all routes
+app.use(cors());
 app.use(express.json()); // Parse incoming JSON payloads
 
-const VERIFY_TOKEN = "token1122"; // Replace "your_verify_token" with your actual verification token
-
-// Handle GET request to verify the webhook
-app.get("/webhook", function (req, res) {
+// ✅ Webhook Verification (GET request)
+app.get("/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
-  if (token === VERIFY_TOKEN) {
-    res.status(200).send(challenge); // Respond with the challenge value
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("Webhook Verified!");
+    res.status(200).send(challenge);
   } else {
-    res.sendStatus(403); // Forbidden if token doesn't match
+    res.sendStatus(403); // Forbidden
   }
 });
 
-// Handle POST request to receive data
+// ✅ Webhook Event Listener (POST request)
 app.post("/webhook", (req, res) => {
-  // Log the incoming request body (useful for debugging)
-  console.log("Received webhook:", req.body);
-
-  // Respond with a success message
-  res.send("Hello World");
+  console.log("🔔 Received Webhook Event:", JSON.stringify(req.body, null, 2));
+  
+  // Respond with a 200 status to acknowledge receipt
+  res.status(200).send("EVENT_RECEIVED");
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// ✅ Root Route
+app.get("/", (req, res) => {
+  res.send("Facebook Webhook is running!");
+});
+
+// ✅ Start Server
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
